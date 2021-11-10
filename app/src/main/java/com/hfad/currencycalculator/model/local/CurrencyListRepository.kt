@@ -20,8 +20,7 @@ class CurrencyListRepository @Inject constructor(
     fun fetchCurrencyListFromSRV(): Single<List<CurrencyListEntity>> {
 
         return currencyListRemoteDataSource.getCurrencyList()
-            .flatMap {
-                clearTables().andThen(
+            .flatMap {Completable.defer {  clearTables() }.andThen(
                 currencyListLocalDataSource.saveResponse(it))
                     .andThen(currencyListLocalDataSource.loadAllCurrency())
 
