@@ -7,5 +7,5 @@
     android:clipToPadding="false"
     android:paddingTop="@dimen/list_item_spacing_half"
     android:paddingBottom="@dimen/list_item_spacing_half"
-    tools:context=".Fragments.DataCurrenciesFragment"
+    tools:context=".presentation.currency_list.fragments.DataCurrenciesFragment"
     tools:listitem="@layout/viewholder_currency" />

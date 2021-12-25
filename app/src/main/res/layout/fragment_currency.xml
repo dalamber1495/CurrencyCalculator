@@ -4,8 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Fragments.CurrencyFragment">
+    tools:context=".presentation.currency_list.fragments.CurrencyFragment">
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/elements"
+        android:visibility="visible"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
     <TextView
         android:id="@+id/tv_right"
         android:layout_width="150dp"
@@ -79,7 +84,7 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextCurrencyLeft" />
-
+    </androidx.constraintlayout.widget.ConstraintLayout>
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyle"
