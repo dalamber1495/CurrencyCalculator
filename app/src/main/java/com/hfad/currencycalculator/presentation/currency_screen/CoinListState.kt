@@ -7,8 +7,6 @@ import com.hfad.currencycalculator.presentation.currency_screen.currency_state.C
 
 data class CoinListState(
     var mEnum:CurrencyEnum? = null,
-    var leftCurrency: CurrencyResponse? = null,
-    var rightCurrency: CurrencyResponse? = null,
     var listEntity: List<CurrencyListEntity> = emptyList(),
     var messageError: String = "",
     var isLoading:Boolean = false

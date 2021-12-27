@@ -1,12 +1,12 @@
 package com.hfad.currencycalculator.presentation.currency_screen.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hfad.currencycalculator.common.Resource
 import com.hfad.currencycalculator.data.local.models.mapToCurrencyResponse
 import com.hfad.currencycalculator.data.repository.CurrencyListRepository
 import com.hfad.currencycalculator.domain.model.CurrencyResponse
+import com.hfad.currencycalculator.domain.model.mapToChange
 import com.hfad.currencycalculator.presentation.currency_screen.CoinListState
 import com.hfad.currencycalculator.presentation.currency_screen.currency_state.CurrencyEnum
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +21,10 @@ class CurrencyViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(CoinListState())
     val state = _state.asStateFlow()
+    private val _leftCurrency = MutableStateFlow(CurrencyResponse())
+    val leftCurrency = _leftCurrency.asStateFlow()
+    private val _rightCurrency = MutableStateFlow(CurrencyResponse())
+    val rightCurrency = _rightCurrency.asStateFlow()
 
     init {
         getDefaultValues()
@@ -31,41 +35,12 @@ class CurrencyViewModel @Inject constructor(
         _state.value = _state.value.apply { this.mEnum = mEnum }
     }
 
-    fun showState(
-        currencyResponse: CurrencyResponse,
-        mLeftValue: CharSequence?,
-        mRightValue: CharSequence?
-    ) {
+    fun setLeftCurrency(currencyResponse: CurrencyResponse) {
+        _leftCurrency.value = currencyResponse
+    }
 
-        when (_state.value.mEnum) {
-            CurrencyEnum.RIGHTCURRENCY -> {
-                currencyResponse.currentValue = mRightValue
-                val coinListState = CoinListState(
-                    mEnum = _state.value.mEnum,
-                    leftCurrency = _state.value.leftCurrency,
-                    rightCurrency = currencyResponse,
-                    listEntity = _state.value.listEntity,
-                    messageError = _state.value.messageError,
-                    isLoading = _state.value.isLoading
-                )
-                _state.value = coinListState
-
-            }
-            CurrencyEnum.LEFTCURRENCY -> {
-                currencyResponse.currentValue = mLeftValue
-                val coinListState = CoinListState(
-                    mEnum = _state.value.mEnum,
-                    leftCurrency = currencyResponse,
-                    rightCurrency = _state.value.rightCurrency,
-                    listEntity = _state.value.listEntity,
-                    messageError = _state.value.messageError,
-                    isLoading = _state.value.isLoading
-                )
-                _state.value = coinListState
-            }
-        }
-
-
+    fun setRightCurrency(currencyResponse: CurrencyResponse) {
+        _rightCurrency.value = currencyResponse
     }
 
     private fun getDefaultValues() {
@@ -75,16 +50,19 @@ class CurrencyViewModel @Inject constructor(
                     is Resource.Success -> {
                         _state.value =
                             result.data?.let {
-                                CoinListState(leftCurrency = result.data.find { entity -> entity.CharCode == "RUB" }
-                                    ?.mapToCurrencyResponse(),
-                                    rightCurrency = result.data.find { entity -> entity.CharCode == "USD" }
-                                        ?.mapToCurrencyResponse(),
+                                CoinListState(
                                     listEntity = it,
                                     isLoading = false,
                                     messageError = "",
                                     mEnum = CurrencyEnum.RIGHTCURRENCY
                                 )
                             }!!
+                        _leftCurrency.value =
+                            result.data.find { entity -> entity.CharCode == "RUB" }
+                                ?.mapToCurrencyResponse()!!
+                        _rightCurrency.value =
+                            result.data.find { entity -> entity.CharCode == "USD" }
+                                ?.mapToCurrencyResponse()!!
                     }
                     is Resource.Error -> {
                         _state.value = CoinListState(
@@ -100,39 +78,31 @@ class CurrencyViewModel @Inject constructor(
         }
     }
 
-    fun convertCurrency(currentCurrency: CharSequence?): String {
-        if (currentCurrency != "" && currentCurrency.toString() == ".")
-            return ""
+    fun convertLeftCurrencyToRight(currentCurrency: CharSequence?) {
+            _leftCurrency.value.currentValue = currentCurrency
+            _rightCurrency.value = _rightCurrency.value.mapToChange(currentValue =
+            String.format(
+                "%.4f",
+                currentCurrency.toString()
+                    .toDoubleOrNull()
+                    ?.let { it * leftCurrency.value.Value!! / rightCurrency.value.Value!! }
+            )
+            )
 
-        if (state.value.leftCurrency != null && state.value.rightCurrency != null && currentCurrency.toString() != "") {
-            Log.e("TAG", "Left: ${state.value.rightCurrency?.Value.toString()}")
-            Log.e("TAG", "Right: ${state.value.leftCurrency?.Value.toString()}")
-
-            return when (_state.value.mEnum) {
-                CurrencyEnum.RIGHTCURRENCY -> {
-                    _state.value.rightCurrency?.currentValue = currentCurrency
-                    String.format(
-                        "%.4f",
-                        currentCurrency.toString()
-                            .toDoubleOrNull()
-                            ?.let { it * state.value.rightCurrency?.Value!! / state.value.leftCurrency?.Value!! }
-                    )
-                }
-                CurrencyEnum.LEFTCURRENCY -> {
-                    _state.value.leftCurrency?.currentValue = currentCurrency
-                    String.format(
-                        "%.4f",
-                        currentCurrency.toString()
-                            .toDoubleOrNull()
-                            ?.let { it * state.value.leftCurrency?.Value!! / state.value.rightCurrency?.Value!! }
-                    )
-                }
-                null -> currentCurrency.toString()
-            }
-        }
-
-        return currentCurrency.toString()
     }
+
+    fun convertRightCurrencyToLeft(currentCurrency: CharSequence?) {
+            _rightCurrency.value.currentValue = currentCurrency
+            _leftCurrency.value = _leftCurrency.value.mapToChange(currentValue =
+            String.format(
+                "%.4f",
+                currentCurrency.toString()
+                    .toDoubleOrNull()
+                    ?.let { it * _rightCurrency.value.Value!! / _leftCurrency.value.Value!! }
+            )
+            )
+    }
+
 
 
 }

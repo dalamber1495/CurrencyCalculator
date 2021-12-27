@@ -1,20 +1,17 @@
 package com.hfad.currencycalculator.presentation.currency_list.fragments
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.*
-import androidx.core.os.bundleOf
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.hfad.currencycalculator.R
-import com.hfad.currencycalculator.data.local.models.mapToCurrencyResponse
 import com.hfad.currencycalculator.databinding.FragmentCurrencyBinding
+import com.hfad.currencycalculator.domain.model.CurrencyResponse
 import com.hfad.currencycalculator.presentation.currency_screen.CoinListState
 import com.hfad.currencycalculator.presentation.currency_screen.currency_state.CurrencyEnum
 import com.hfad.currencycalculator.presentation.currency_screen.viewmodels.CurrencyViewModel
@@ -33,19 +30,22 @@ class CurrencyFragment : Fragment(R.layout.fragment_currency) {
         binding = FragmentCurrencyBinding.bind(view)
         Log.e("TAG", "VCreated: ${viewModel.state.value.mEnum}")
 
-        setFragmentResultListener(ARG_CURREN) { requestKey, bundle ->
-            val mCurrency = bundle.getString(ARG_CURREN_VAL)
-            viewModel.apply {
-                showState(
-                    state.value.listEntity.find { entity -> entity.NumCode == mCurrency }
-                        ?.mapToCurrencyResponse()!!,
-                    binding.editTextCurrencyLeft.text,
-                    binding.editTextCurrencyRight.text
-                ).toString()
-            }
+        lifecycleScope.launchWhenStarted {
+            viewModel.leftCurrency.onEach {
+                binding.changeLeftCurrencyNumCode(
+                    it
+                )
+            }.collect()
+        }
+        lifecycleScope.launchWhenStarted {
+            viewModel.rightCurrency.onEach {
+                binding.changeRightCurrencyNumCode(
+                    it
+                )
+            }.collect()
         }
 
-        lifecycleScope.launchWhenResumed {
+        lifecycleScope.launchWhenStarted {
             viewModel.state.onEach {
                 when {
                     it.isLoading -> {
@@ -58,7 +58,6 @@ class CurrencyFragment : Fragment(R.layout.fragment_currency) {
                         coinListState = it
                         binding.apply {
                             showAll()
-                            changeCurrency(it)
                         }
                     }
                 }
@@ -68,21 +67,13 @@ class CurrencyFragment : Fragment(R.layout.fragment_currency) {
         binding.btnLeft.setOnClickListener {
             viewModel.setState(CurrencyEnum.LEFTCURRENCY)
             findNavController().navigate(
-                R.id.action_currencyFragment_to_dataCurrenciesFragment,
-                bundleOf(
-                    DataCurrenciesFragment.ARG_ITEM_COUNT to coinListState.listEntity,
-                    DataCurrenciesFragment.ARG_NUMCODE_COUNT to coinListState.leftCurrency?.NumCode
-                )
+                R.id.action_currencyFragment_to_dataCurrenciesFragment
             )
         }
         binding.btnRight.setOnClickListener {
             viewModel.setState(CurrencyEnum.RIGHTCURRENCY)
             findNavController().navigate(
-                R.id.action_currencyFragment_to_dataCurrenciesFragment,
-                bundleOf(
-                    DataCurrenciesFragment.ARG_ITEM_COUNT to coinListState.listEntity,
-                    DataCurrenciesFragment.ARG_NUMCODE_COUNT to coinListState.rightCurrency?.NumCode
-                )
+                R.id.action_currencyFragment_to_dataCurrenciesFragment
             )
         }
 
@@ -92,10 +83,7 @@ class CurrencyFragment : Fragment(R.layout.fragment_currency) {
             if (keepTextChange) {
                 keepTextChange = false
                 text.let {
-                    viewModel.setState(CurrencyEnum.RIGHTCURRENCY)
-                    binding.editTextCurrencyLeft.setText(
-                        viewModel.convertCurrency(it)
-                    )
+                    viewModel.convertRightCurrencyToLeft(it)
                 }
             } else {
                 keepTextChange = true
@@ -105,10 +93,7 @@ class CurrencyFragment : Fragment(R.layout.fragment_currency) {
             if (keepTextChange) {
                 keepTextChange = false
                 text.let {
-                    viewModel.setState(CurrencyEnum.LEFTCURRENCY)
-                    binding.editTextCurrencyRight.setText(
-                        viewModel.convertCurrency(it)
-                    )
+                    viewModel.convertLeftCurrencyToRight(it)
                 }
             } else {
                 keepTextChange = true
@@ -133,21 +118,16 @@ class CurrencyFragment : Fragment(R.layout.fragment_currency) {
         this.progressBar.visibility = View.GONE
     }
 
-    private fun FragmentCurrencyBinding.changeCurrency(result: CoinListState) {
-        if (result.mEnum == CurrencyEnum.LEFTCURRENCY) {
-            this.editTextCurrencyLeft.setText(result.leftCurrency?.currentValue)
-        } else {
-            this.editTextCurrencyRight.setText(result.rightCurrency?.currentValue)
-        }
-        this.tvRight.text = result.rightCurrency?.Name
-        this.tvLeft.text = result.leftCurrency?.Name
-
+    private fun FragmentCurrencyBinding.changeLeftCurrencyNumCode(result: CurrencyResponse) {
+        this.tvLeft.text = result.Name
+        this.editTextCurrencyLeft.setText(result.currentValue)
     }
 
-    companion object {
-        val ARG_CURREN = "argument_of_currencies"
-        val ARG_CURREN_VAL = "argument_of_currenciesSs"
+    private fun FragmentCurrencyBinding.changeRightCurrencyNumCode(result: CurrencyResponse) {
+        this.tvRight.text = result.Name
+        this.editTextCurrencyRight.setText(result.currentValue)
     }
+
 
 }
 
