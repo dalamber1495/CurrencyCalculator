@@ -1,30 +1,40 @@
 package com.hfad.currencycalculator.presentation.currency_list.fragments.adapters
 
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.os.bundleOf
+import androidx.fragment.app.setFragmentResult
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.Navigation
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import androidx.recyclerview.widget.RecyclerView
 import com.hfad.currencycalculator.presentation.currency_list.fragments.DataCurrenciesFragment
 import com.hfad.currencycalculator.R
 import com.hfad.currencycalculator.data.local.models.CurrencyListEntity
 import com.hfad.currencycalculator.databinding.ViewholderCurrencyBinding
+import com.hfad.currencycalculator.presentation.currency_list.fragments.CurrencyFragment
+import kotlinx.coroutines.NonDisposableHandle.parent
+import java.io.Serializable
 
 import kotlin.collections.ArrayList
 
 
 class ItemAdapter constructor(
     private val fragment: DataCurrenciesFragment
-):
+) :
     RecyclerView.Adapter<ViewHolder>() {
     private var mCurrencies: MutableList<CurrencyListEntity> = ArrayList()
-    private var delegate: DataCurrenciesFragment.OnItemClickListener? = null
-    private var numCode:String? = null
+    private var numCode: String? = null
 
-    fun attachDelegate(delegate: DataCurrenciesFragment.OnItemClickListener, numCode:String?) {
+    fun attachDelegate(numCode: String?) {
         this.numCode = numCode
-        this.delegate = delegate
     }
 
     fun setData(mCurrencies: List<CurrencyListEntity>) {
@@ -52,7 +62,7 @@ class ItemAdapter constructor(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.onBind(mCurrencies[position], delegate, numCode,fragment)
+        holder.onBind(mCurrencies[position], numCode, fragment)
     }
 
     override fun getItemCount(): Int {
@@ -62,7 +72,11 @@ class ItemAdapter constructor(
 
 class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-    fun onBind(mValue: CurrencyListEntity, delegate: DataCurrenciesFragment.OnItemClickListener?, numCode: String?, fragment: DataCurrenciesFragment) {
+    fun onBind(
+        mValue: CurrencyListEntity,
+        numCode: String?,
+        fragment: DataCurrenciesFragment
+    ) {
         val binding = ViewholderCurrencyBinding.bind(itemView)
         // Log.e("TAG", "onBind: ${mValue}")
         binding.text.text = mValue.Name
@@ -71,8 +85,11 @@ class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         else View.GONE
 
         itemView.setOnClickListener {
-            //mValue.isSolved = true
-            delegate?.onItemClick(mValue)
+
+            fragment.setFragmentResult(
+                CurrencyFragment.ARG_CURREN,
+                bundleOf(CurrencyFragment.ARG_CURREN_VAL to mValue.NumCode)
+            )
             fragment.dismiss()
         }
 

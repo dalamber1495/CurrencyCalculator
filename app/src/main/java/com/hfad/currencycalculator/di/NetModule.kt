@@ -59,13 +59,7 @@ class NetModule() {
     fun provideApi(retrofit: Retrofit): CurrencyApi =
         retrofit.create(CurrencyApi::class.java)
 
-//    @Provides
-//    @Singleton
-//    fun providePresenter(mCurrencyListRepository: CurrencyListRepository): CurrencyPresenter
-//        {
-//            Log.e("SDSD", "providePresenter: ${CurrencyPresenter(mCurrencyListRepository)}", )
-//            return CurrencyPresenter(mCurrencyListRepository)
-//        }
+
 }
 
 private const val BASE_URL = "https://www.cbr-xml-daily.ru/"
